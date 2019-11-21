@@ -27,7 +27,7 @@ from beast.observationmodel.noisemodel import absflux_covmat
 
 # project : string
 #   the name of the output results directory
-project = "beast_example_phat"
+project = "multidistance"
 
 # name of the survey
 #  used for the creation of the unique name for each source
@@ -54,7 +54,6 @@ basefilters = ["F275W", "F336W", "F475W", "F814W", "F110W", "F160W"]
 #   input data MUST be in fluxes, NOT in magnitudes
 #   fluxes MUST be in normalized Vega units
 obs_colnames = [f.lower() + "_rate" for f in basefilters]
-# obs_colnames = [ f.upper() + '_RATE' for f in basefilters ]
 
 # obsfile : string
 #   pathname of the observed catalog
@@ -95,18 +94,6 @@ ast_maglimit = [1.0]
 # If False, the ast list is produced with only magnitudes.
 ast_with_positions = True
 
-# ast_density_table :  (string,optional)
-# Name of density table created by
-# tools/create_background_density_map.py, containing either the source
-# density map or the background density map. If supplied, the ASTs will
-# be repeated for each density bin in the table
-ast_density_table = None
-# ast_density_table = 'data/b15_4band_det_27_A_sourcedens_map.hd5'
-
-# ast_N_bins : (int, optional)
-# Number of source or background bins that you want ASTs repeated over
-# ast_N_bins = 8
-
 # ast_pixel_distribution : float (optional)
 # (Used if ast_with_positions is True), minimum pixel separation between AST
 # position and catalog star used to determine the AST spatial distribution
@@ -118,12 +105,6 @@ ast_pixel_distribution = 10.0
 # photometry.
 ast_reference_image = None
 
-# ast_coord_boundary : None, or list of two arrays (optional)
-# If supplied, these RA/Dec coordinates will be used to limit the region
-# over which ASTs are generated.  Input should be list of two arrays, the
-# first RA and the second Dec, ordered sequentially around the region
-# (either CW or CCW).
-ast_coord_boundary = None
 
 # -------------------------------------------
 # Noise Model Artificial Star Test Parameters
@@ -139,32 +120,25 @@ ast_colnames = np.array(basefilters)
 
 # noisefile : string
 #   create a name for the noise model
-noisefile = project + "/" + project + "_noisemodel.grid.hd5"
+noisefile = project + "/" + project + "_noisemodel.hd5"
 
 # absflux calibration covariance matrix for HST specific filters (AC)
 absflux_a_matrix = absflux_covmat.hst_frac_matrix(filters)
 
-# Distances: distance to the galaxy [min, max, step] or [fixed number]
-distances = [24.47]
-
-# Distance unit (any length or units.mag)
-distance_unit = units.mag
-
-# velocity of galaxy
-velocity = -300 * units.km / units.s  # M31 velocity from SIMBAD
-
 ################
+
+# Andromeda: 778 ± 33 kpc. Fit within range of 66 kpc. 10 steps --> 6.6 kpc
+distances = [(778.0 - 33.0) * 1.0e3, (778.0 + 33.0) * 1.0e3, 6.6e3]
+distance_unit = units.pc
 
 # Stellar grid definition
 
 # log10(Age) -- [min,max,step] to generate the isochrones in years
 #   example [6.0, 10.13, 1.0]
 logt = [6.0, 10.13, 1.0]
-age_prior_model = {'name': 'flat'}
 
 # note: Mass is not sampled, instead the isochrone supplied
 #       mass spacing is used instead
-mass_prior_model = {"name": "kroupa"}
 
 # Metallicity : list of floats
 #   Here: Z == Z_initial, NOT Z(t) surface abundance
@@ -172,8 +146,8 @@ mass_prior_model = {"name": "kroupa"}
 #   example z = [0.03, 0.019, 0.008, 0.004]
 #   can they be set as [min, max, step]?
 z = [0.03, 0.019, 0.008, 0.004]
-met_prior_model = {"name": "flat"}
 
+# Isochrone Model Grid
 #   Current Choices: Padova or MIST
 #   PadovaWeb() -- `modeltype` param for iso sets from ezpadova
 #      (choices: parsec12s_r14, parsec12s, 2010, 2008, 2002)
@@ -199,16 +173,28 @@ extLaw = extinction.Gordon16_RvFALaw()
 #   example [min, max, step] = [0.0, 10.055, 1.0]
 avs = [0.0, 10.055, 1.0]
 av_prior_model = {"name": "flat"}
+# av_prior_model = {'name': 'lognormal',
+#                  'max_pos': 2.0,
+#                  'sigma': 1.0,
+#                  'N': 10.}
 
 # R(V): dust average grain size
 #   example [min, max, step] = [2.0,6.0,1.0]
 rvs = [2.0, 6.0, 1.0]
 rv_prior_model = {"name": "flat"}
+# rv_prior_model = {'name': 'lognormal',
+#                  'max_pos': 2.0,
+#                  'sigma': 1.0,
+#                  'N': 10.}
 
 # fA: mixture factor between "MW" and "SMCBar" extinction curves
 #   example [min, max, step] = [0.0,1.0, 0.25]
 fAs = [0.0, 1.0, 0.25]
 fA_prior_model = {"name": "flat"}
+# fA_prior_model = {'name': 'lognormal',
+#                  'max_pos': 0.5,
+#                  'sigma': 0.2,
+#                  'N': 10.}
 
 ################
 
