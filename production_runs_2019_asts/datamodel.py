@@ -161,6 +161,7 @@ n_subgrid = 1
 
 # Distances: distance to the galaxy [min, max, step] or [fixed number]
 distances = [24.47]
+distance_prior_model = {'name': 'flat'}
 
 # Distance unit (any length or units.mag)
 distance_unit = units.mag
