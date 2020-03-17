@@ -144,18 +144,18 @@ noisefile = project + "/" + project + "_noisemodel.grid.hd5"
 # absflux calibration covariance matrix for HST specific filters (AC)
 absflux_a_matrix = absflux_covmat.hst_frac_matrix(filters)
 
-# Distances: distance to the galaxy [min, max, step] or [fixed number]
-distances = [24.47]
-
-# Distance unit (any length or units.mag)
-distance_unit = units.mag
-
 # velocity of galaxy
 velocity = -300 * units.km / units.s  # M31 velocity from SIMBAD
 
 ################
 
 # Stellar grid definition
+
+# Distances: distance to the galaxy [min, max, step] or [fixed number]
+distances = [24.47]
+# Distance unit (any length or units.mag)
+distance_unit = units.mag
+distance_prior_model = {'name': 'flat'}
 
 # log10(Age) -- [min,max,step] to generate the isochrones in years
 #   example [6.0, 10.13, 1.0]

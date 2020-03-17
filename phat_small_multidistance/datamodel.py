@@ -130,6 +130,7 @@ absflux_a_matrix = absflux_covmat.hst_frac_matrix(filters)
 # Andromeda: 778 ± 33 kpc. Fit within range of 66 kpc. 10 steps --> 6.6 kpc
 distances = [(778.0 - 33.0) * 1.0e3, (778.0 + 33.0) * 1.0e3, 6.6e3]
 distance_unit = units.pc
+distance_prior_model = {'name': 'flat'}
 
 # Stellar grid definition
 
@@ -139,6 +140,7 @@ logt = [6.0, 10.13, 1.0]
 
 # note: Mass is not sampled, instead the isochrone supplied
 #       mass spacing is used instead
+mass_prior_model = {"name": "kroupa"}
 
 # Metallicity : list of floats
 #   Here: Z == Z_initial, NOT Z(t) surface abundance
@@ -146,6 +148,7 @@ logt = [6.0, 10.13, 1.0]
 #   example z = [0.03, 0.019, 0.008, 0.004]
 #   can they be set as [min, max, step]?
 z = [0.03, 0.019, 0.008, 0.004]
+met_prior_model = {"name": "flat"}
 
 # Isochrone Model Grid
 #   Current Choices: Padova or MIST

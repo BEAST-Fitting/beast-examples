@@ -172,9 +172,9 @@ n_subgrid = 10
 
 # Distances: distance to the galaxy [min, max, step] or [fixed number]
 distances = [24.36]
-
 # Distance unit (any length or units.mag)
 distance_unit = units.mag
+distance_prior_model = {'name': 'flat'}
 
 # velocity of galaxy
 velocity = -236 * units.km / units.s
@@ -186,9 +186,11 @@ velocity = -236 * units.km / units.s
 # log10(Age) -- [min,max,step] to generate the isochrones in years
 #   example [6.0, 10.13, 1.0]
 logt = [6.0, 10.13, 0.1]
+age_prior_model = {'name': 'flat'}
 
 # note: Mass is not sampled, instead the isochrone supplied
 #       mass spacing is used instead
+mass_prior_model = {"name": "kroupa"}
 
 # Metallicity : list of floats
 #   Here: Z == Z_initial, NOT Z(t) surface abundance
@@ -198,6 +200,7 @@ logt = [6.0, 10.13, 0.1]
 z = (
     10 ** np.array([-2.1, -1.8, -1.5, -1.2, -0.9, -0.6, -0.3, 0.0, 0.3]) * 0.0152
 ).tolist()
+met_prior_model = {"name": "flat"}
 
 # Isochrone Model Grid
 #   Current Choices: Padova or MIST
