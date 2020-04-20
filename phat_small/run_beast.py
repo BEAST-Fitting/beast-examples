@@ -118,7 +118,12 @@ if __name__ == "__main__":
 
     if args.fit:
 
-        run_fitting.run_fitting(use_sd=False, nsubs=1, nprocs=1)
+        run_fitting.run_fitting(
+            use_sd=False,
+            nsubs=1,
+            nprocs=1,
+            pdf2d_param_list=['Av', 'M_ini', 'logT']
+        )
 
     if args.resume:
 
