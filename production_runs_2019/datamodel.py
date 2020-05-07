@@ -222,7 +222,7 @@ osl = stellib.Tlusty() + stellib.Kurucz()
 
 # Dust extinction grid definition
 extLaw = extinction.Generalized_RvFALaw(
-    ALaw=extinction.Generalized_DustExt(curve="F20"),
+    ALaw=extinction.Generalized_DustExt(curve="F19"),
     BLaw=extinction.Generalized_DustExt(curve="G03_SMCBar"),
 )
 
