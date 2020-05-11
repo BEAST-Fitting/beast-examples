@@ -1,6 +1,6 @@
 """
 Data Model interface v2.0
-BEAST datamodel for M33 PHAT fields
+BEAST datamodel for M31 Example
 """
 import numpy as np
 
@@ -28,7 +28,7 @@ from beast.observationmodel.noisemodel import absflux_covmat
 
 # project : string
 #   the name of the output results directory
-project = "M31-B21-WEST_cutout"
+project = "M31-B09-EAST_chunk"
 
 # name of the survey
 #  used for the creation of the unique name for each source
@@ -59,7 +59,7 @@ obs_colnames = [f.upper() + "_RATE" for f in basefilters]
 
 # obsfile : string
 #   pathname of the observ￼ed catalog
-obsfile = "./M31-B21-WEST_cutout.st.fits"
+obsfile ="./M31-B09-EAST_chunk.st_with_sourceden.fits" 
 
 # ------------------------------------------------------
 # Artificial Star Test Input File Generation Parameters
@@ -109,9 +109,7 @@ ast_with_positions = True
 # tools/create_background_density_map.py, containing either the source
 # density map or the background density map. If supplied, the ASTs will
 # be repeated for each density bin in the table
-ast_density_table = './M31-B21-WEST_cutout.st_sourceden_map.hd5'
-
-# ast_density_table = 'data/b15_4band_det_27_A_sourcedens_map.hd5'
+ast_density_table = './M31-B09-EAST_chunk.st_sourceden_map.hd5'
 
 # ast_N_bins : (int, optional)
 # Number of source or background bins that you want ASTs repeated over
@@ -127,7 +125,7 @@ ast_pixel_distribution = 10.0
 # is True and no X and Y information  is present in the photometry catalog)
 # Name of the reference image used by DOLPHOT when running the measured
 # photometry.
-ast_reference_image = "./M31-B21-WEST_cutout.st.fits"
+ast_reference_image = "M31-B09-EAST_chunk_F475W_drz.chip1.fits"
 
 # ast_coord_boundary : None, or list of two arrays (optional)
 # If supplied, these RA/Dec coordinates will be used to limit the region
@@ -143,7 +141,8 @@ ast_coord_boundary = None
 
 # astfile : string
 #   pathname of the AST files (single camera ASTs)
-astfile = "data/M31-B21_WEST_cutout.gst.fake.fits"
+astfile = "M31-B09-EAST_chunk.gst.fake.fits"
+#astfile = "M31-B09-EAST_chunk.gst.fake_cut.fits"
 
 # ast_colnames : list of strings
 #   names of columns for filters in the AST catalog (AC)
@@ -171,7 +170,7 @@ n_subgrid = 1
 # Distance/Velocity
 
 # Distances: distance to the galaxy [min, max, step] or [fixed number]
-distances = [24.79]
+distances = [24.79]#[24.29, 25.29, 0.25] #number was originally 24.79
 #used 2013AJ....146...86T as a reference
 
 # Distance unit (any length or units.mag)
