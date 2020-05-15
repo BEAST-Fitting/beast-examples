@@ -17,7 +17,7 @@ from beast.tools.run import (
     create_obsmodel,
     run_fitting,
 )
-from beast.physicsmodel.grid import FileSEDGrid
+from beast.physicsmodel.grid import SEDGrid
 import beast.observationmodel.noisemodel.generic_noisemodel as noisemodel
 from beast.fitting import trim_grid
 from beast.tools import verify_params
@@ -98,7 +98,7 @@ if __name__ == "__main__":
         modelsedgridfile = (
             datamodel.project + "/" + datamodel.project + "_seds.grid.hd5"
         )
-        modelsedgrid = FileSEDGrid(modelsedgridfile)
+        modelsedgrid = SEDGrid(modelsedgridfile)
 
         # read in the noise model just created
         noisemodel_vals = noisemodel.get_noisemodelcat(datamodel.noisefile)

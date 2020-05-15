@@ -233,7 +233,7 @@ class GenFluxCatalog(Observations):
     def __init__(self, inputFile, filters=filters):
         """ Construct the interface """
         desc = "GENERIC star: %s" % inputFile
-        Observations.__init__(self, inputFile, desc=desc)
+        super().__init__(inputFile, desc=desc)
         self.setFilters(filters)
         # some bad values smaller than expected
         # in physical flux units
@@ -241,22 +241,23 @@ class GenFluxCatalog(Observations):
 
         # rate column needed as this is the *flux* column
         for ik, k in enumerate(filters):
-            self.data.set_alias(k, obs_colnames[ik])
+            self.filter_aliases[k] = obs_colnames[ik]
 
     def getFlux(self, num, units=False):
-        """returns the absolute flux of an observation
+        """
+        Returns the flux of an observation
 
         Parameters
         ----------
-        num: int
+        num : int
             index of the star in the catalog to get measurement from
 
-        units: bool
+        units : bool
             if set returns the fluxes with a unit capsule
 
         Returns
         -------
-        flux: ndarray[dtype=float, ndim=1]
+        flux : ndarray[dtype=float, ndim=1]
             Measured integrated flux values throughout the filters
             in erg/s/cm^2/A
         """
@@ -265,7 +266,7 @@ class GenFluxCatalog(Observations):
         d = self.data[num]
 
         flux = (
-            np.array([d[self.data.resolve_alias(ok)] for ok in self.filters])
+            np.array([d[self.filter_aliases[ok]] for ok in self.filters])
             * self.vega_flux
         )
 
