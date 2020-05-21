@@ -1,21 +1,15 @@
 import numpy as np
-import glob
 import os
 import types
 
-from beast.tools.run import (create_physicsmodel,
-                             make_ast_inputs,
-                             create_filenames)
+from beast.tools.run import create_physicsmodel, make_ast_inputs
 
-from beast.tools import (create_background_density_map,
-                             split_ast_input_file,
-                             cut_catalogs)
-from beast.plotting import (plot_mag_hist,
-                            make_ds9_region_file,
-                            plot_ast_histogram)
+from beast.tools import create_background_density_map
+from beast.plotting import plot_mag_hist, make_ds9_region_file, plot_ast_histogram
 
 from shapely import geometry
 from astropy.table import Table
+from astropy.io import fits
 
 
 def beast_production_wrapper():
@@ -38,24 +32,27 @@ def beast_production_wrapper():
     """
 
     # get the list of fields
-    field_names = ['M31-B17-WEST']
+    field_names = ["M31-B17-WEST"]
 
     # reference image headers
-    ast_ref_im = ['./data/M31-B17-WEST_F475W_drz_head.fits']
+    ast_ref_im = ["./data/M31-B17-WEST_F475W_drz_head.fits"]
 
     # filter for sorting
-    ref_filter = ['F475W', 'F475W']
+    ref_filter = ["F475W", "F475W"]
 
     # filter for checking flags
-    flag_filter = ['F475W', 'F475W']
+    flag_filter = ["F475W", "F475W"]
 
     # coordinates for the boundaries of the field
-    boundary_coord = [ [[11.3569155882981, 11.3332629372269, 11.1996295883163, 11.2230444144334],
-                           [42.0402119924196, 41.9280756279533, 41.9439995726193, 42.0552016945299]] ]
+    boundary_coord = [
+        [
+            [11.3569155882981, 11.3332629372269, 11.1996295883163, 11.2230444144334],
+            [42.0402119924196, 41.9280756279533, 41.9439995726193, 42.0552016945299],
+        ]
+    ]
 
     # number of fields
-    n_field = len(field_names)
-
+    # n_field = len(field_names)
 
     # Need to know what the correspondence is between filter names in the
     # catalog and the BEAST filter names.
@@ -65,83 +62,86 @@ def beast_production_wrapper():
     # matter, as long as the order in one list matches the order in the other
     # list.
     #
-    gst_filter_names = ['F275W','F336W','F475W','F814W','F110W','F160W']
-    beast_filter_names = ['HST_WFC3_F275W','HST_WFC3_F336W','HST_ACS_WFC_F475W',
-                          'HST_ACS_WFC_F814W', 'HST_WFC3_F110W','HST_WFC3_F160W']
+    gst_filter_names = ["F275W", "F336W", "F475W", "F814W", "F110W", "F160W"]
+    beast_filter_names = [
+        "HST_WFC3_F275W",
+        "HST_WFC3_F336W",
+        "HST_ACS_WFC_F475W",
+        "HST_ACS_WFC_F814W",
+        "HST_WFC3_F110W",
+        "HST_WFC3_F160W",
+    ]
 
-
-    #for b in range(n_field):
+    # for b in range(n_field):
     for b in [0]:
 
-        print('********')
-        print('field {0} (b={1})'.format(field_names[b], b))
-        print('********')
-
+        print("********")
+        print("field {0} (b={1})".format(field_names[b], b))
+        print("********")
 
         # only create an AST input list if the ASTs don't already exist
-        ast_input_file = './' + field_names[b] + '_beast/' + field_names[b] + '_beast_inputAST.txt'
+        ast_input_file = (
+            "./" + field_names[b] + "_beast/" + field_names[b] + "_beast_inputAST.txt"
+        )
         if os.path.isfile(ast_input_file):
-            print('AST input file already exists... skipping \n')
+            print("AST input file already exists... skipping \n")
             continue
-
 
         # -----------------
         # data file names
         # -----------------
 
         # paths for the data/AST files
-        gst_file = './data/' + field_names[b]+'.st.fits'
-        ast_file = './data/' + field_names[b]+'.gst.fake.fits'
+        gst_file = "./data/" + field_names[b] + ".st.fits"
+        ast_file = "./data/" + field_names[b] + ".gst.fake.fits"
 
         # region file with catalog stars
-        #make_ds9_region_file.region_file_fits(gst_file)
-        #make_ds9_region_file.region_file_fits(ast_file)
-
-
+        # make_ds9_region_file.region_file_fits(gst_file)
+        # make_ds9_region_file.region_file_fits(ast_file)
 
         # -----------------
         # 1a. make magnitude histograms
         # -----------------
 
-        print('')
-        print('making magnitude histograms')
-        print('')
+        print("")
+        print("making magnitude histograms")
+        print("")
 
-        #if not os.path.isfile('./data/'+field_names[b]+'.gst_maghist.pdf'):
+        # if not os.path.isfile('./data/'+field_names[b]+'.gst_maghist.pdf'):
         peak_mags = plot_mag_hist.plot_mag_hist(gst_file, stars_per_bin=70, max_bins=75)
-        #test = plot_mag_hist.plot_mag_hist(ast_file, stars_per_bin=200, max_bins=30)
-
+        # test = plot_mag_hist.plot_mag_hist(ast_file, stars_per_bin=200, max_bins=30)
 
         # -----------------
         # 1b. make a source density map
         # -----------------
 
-        print('')
-        print('making source density map')
-        print('')
-
-
+        print("")
+        print("making source density map")
+        print("")
 
         # source density map
-        sd_map = gst_file.replace('.fits','_source_den_image.fits')
+        sd_map = gst_file.replace(".fits", "_source_den_image.fits")
         if not os.path.isfile(sd_map):
-        #if True:
+            # if True:
             # - pixel size of 5 arcsec
             # - use ref_filter[b] between vega mags of 15 and peak_mags[ref_filter[b]]-0.5
-            sourceden_args = types.SimpleNamespace(subcommand='sourceden',
-                                                   catfile=gst_file, pixsize=5, npix=None,
-                                                   mag_name=ref_filter[b]+'_VEGA',
-                                                   mag_cut=[15,peak_mags[ref_filter[b]]-0.5],
-                                                   flag_name=flag_filter[b]+'_FLAG')
+            sourceden_args = types.SimpleNamespace(
+                subcommand="sourceden",
+                catfile=gst_file,
+                pixsize=5,
+                npix=None,
+                mag_name=ref_filter[b] + "_VEGA",
+                mag_cut=[15, peak_mags[ref_filter[b]] - 0.5],
+                flag_name=flag_filter[b] + "_FLAG",
+            )
             create_background_density_map.main_make_map(sourceden_args)
 
         # new file name with the source density column
-        gst_file_sd = gst_file.replace('.fits', '_with_sourceden.fits')
+        # gst_file_sd = gst_file.replace(".fits", "_with_sourceden.fits")
 
         with fits.open(sd_map) as hdu_sd:
             sd_data = hdu_sd[0].data[hdu_sd[0].data != 0]
-            ast_n_bins = np.ceil( (np.max(sd_data) - np.min(sd_data))/1.0 )
-
+            ast_n_bins = np.ceil((np.max(sd_data) - np.min(sd_data)) / 1.0)
 
         # -----------------
         # 4/5. edit photometry/AST catalogs
@@ -151,19 +151,18 @@ def beast_production_wrapper():
         # - in regions without full imaging coverage,
         # - flagged in flag_filter
 
-        #print('')
-        #print('editing photometry/AST catalogs')
-        #print('')
+        # print('')
+        # print('editing photometry/AST catalogs')
+        # print('')
 
-        #gst_file_cut = gst_file.replace('.fits', '_with_sourceden_cut.fits')
-        #ast_file_cut = ast_file.replace('.fits', '_cut.fits')
+        # gst_file_cut = gst_file.replace('.fits', '_with_sourceden_cut.fits')
+        # ast_file_cut = ast_file.replace('.fits', '_cut.fits')
 
-        #cut_catalogs.cut_catalogs(
+        # cut_catalogs.cut_catalogs(
         #    gst_file_sd, gst_file_cut,
         #    #ast_file, ast_file_cut,
         #    partial_overlap=True, flagged=True, flag_filter=flag_filter[b],
         #    region_file=True)
-
 
         # -----------------
         # 0. make datamodel file
@@ -172,56 +171,60 @@ def beast_production_wrapper():
         # need to do this first, because otherwise any old version that exists
         # will be imported, and changes made here won't get imported again
 
-        print('')
-        print('creating datamodel file')
-        print('')
+        print("")
+        print("creating datamodel file")
+        print("")
 
         # get the boundaries of the image
         boundary_ra = boundary_coord[b][0]
         boundary_dec = boundary_coord[b][1]
         # make an eroded version for ASTs (10 pix = 0.5")
         boundary_polygon = geometry.Polygon(
-            [[float(boundary_ra[i]), float(boundary_dec[i])]
-             for i in range(len(boundary_ra))]
+            [
+                [float(boundary_ra[i]), float(boundary_dec[i])]
+                for i in range(len(boundary_ra))
+            ]
         )
-        erode_polygon = boundary_polygon.buffer(-0.5/3600)
+        erode_polygon = boundary_polygon.buffer(-0.5 / 3600)
         boundary_ra_erode = [str(x) for x in erode_polygon.exterior.coords.xy[0]]
         boundary_dec_erode = [str(x) for x in erode_polygon.exterior.coords.xy[1]]
 
-        create_datamodel(gst_file, ast_file, gst_filter_names, beast_filter_names,
-                            ref_image=ast_ref_im[b],
-                            ast_n_bins=ast_n_bins,
-                            boundary_ra=boundary_ra_erode,
-                            boundary_dec=boundary_dec_erode)
+        create_datamodel(
+            gst_file,
+            ast_file,
+            gst_filter_names,
+            beast_filter_names,
+            ref_image=ast_ref_im[b],
+            ast_n_bins=ast_n_bins,
+            boundary_ra=boundary_ra_erode,
+            boundary_dec=boundary_dec_erode,
+        )
 
         # -----------------
         # 2. make physics model
         # -----------------
 
-        print('')
-        print('making physics model')
-        print('')
+        print("")
+        print("making physics model")
+        print("")
 
-
-        model_grid_file = './{0}_beast/{0}_beast_seds.grid.hd5'.format(field_names[b])
+        model_grid_file = "./{0}_beast/{0}_beast_seds.grid.hd5".format(field_names[b])
 
         # only make the physics model if it doesn't already exist
         if not os.path.isfile(model_grid_file):
             create_physicsmodel.create_physicsmodel(nprocs=1, nsubs=1)
 
-
         # -----------------
         # 3. make ASTs
         # -----------------
 
-
         if not os.path.isfile(ast_file):
-        #if True:
+            # if True:
             if not os.path.isfile(ast_input_file):
-            #if True:
-                print('')
-                print('creating artificial stars')
-                print('')
+                # if True:
+                print("")
+                print("creating artificial stars")
+                print("")
                 make_ast_inputs.make_ast_inputs(flux_bin_method=True)
 
             # make a region file of the ASTs
@@ -230,15 +233,20 @@ def beast_production_wrapper():
             # make histograms of the fluxes
             plot_ast_histogram.plot_ast(ast_input_file, sed_grid_file=model_grid_files)
 
-            print('\n**** go run ASTs for '+field_names[b]+'! ****\n')
+            print("\n**** go run ASTs for " + field_names[b] + "! ****\n")
             continue
 
 
-
-
-def create_datamodel(gst_file, ast_file, gst_filter_label, beast_filter_label,
-                         ref_image='None', ast_n_bins=5,
-                         boundary_ra=None, boundary_dec=None):
+def create_datamodel(
+    gst_file,
+    ast_file,
+    gst_filter_label,
+    beast_filter_label,
+    ref_image="None",
+    ast_n_bins=5,
+    boundary_ra=None,
+    boundary_dec=None,
+):
     """
     Create a datamodel.py file for the given field.  This will open the file to
     determine the filters present - the `*_filter_label` inputs are references
@@ -285,44 +293,55 @@ def create_datamodel(gst_file, ast_file, gst_filter_label, beast_filter_label,
             filter_list_base.append(gst_filter_label[f])
             filter_list_long.append(beast_filter_label[f])
 
-
     # read in the template datamodel file
-    orig_file = open('datamodel_template.py','r')
-    datamodel_lines = np.array( orig_file.readlines() )
+    orig_file = open("datamodel_template.py", "r")
+    datamodel_lines = np.array(orig_file.readlines())
     orig_file.close()
 
     # write out an edited datamodel
-    new_file = open('datamodel.py','w')
+    new_file = open("datamodel.py", "w")
 
     for i in range(len(datamodel_lines)):
 
         # replace project name with the field ID
-        if datamodel_lines[i][0:10] == 'project = ':
-            new_file.write('project = "' + gst_file.split('/')[-1].split('.')[0] + '_beast"\n')
+        if datamodel_lines[i][0:10] == "project = ":
+            new_file.write(
+                'project = "' + gst_file.split("/")[-1].split(".")[0] + '_beast"\n'
+            )
         # obsfile
-        elif datamodel_lines[i][0:10] == 'obsfile = ':
+        elif datamodel_lines[i][0:10] == "obsfile = ":
             new_file.write('obsfile = "' + gst_file + '"\n')
         # AST file name
-        elif datamodel_lines[i][0:10] == 'astfile = ':
-            new_file.write('astfile = "'+ ast_file +'"\n')
+        elif datamodel_lines[i][0:10] == "astfile = ":
+            new_file.write('astfile = "' + ast_file + '"\n')
         # BEAST filter names
-        elif datamodel_lines[i][0:10] == 'filters = ':
+        elif datamodel_lines[i][0:10] == "filters = ":
             new_file.write("filters = ['" + "','".join(filter_list_long) + "'] \n")
         # catalog filter names
-        elif datamodel_lines[i][0:14] == 'basefilters = ':
+        elif datamodel_lines[i][0:14] == "basefilters = ":
             new_file.write("basefilters = ['" + "','".join(filter_list_base) + "'] \n")
         # AST stuff
-        elif datamodel_lines[i][0:20] == 'ast_density_table = ':
-            new_file.write('ast_density_table = "'
-                + gst_file.replace('.fits','_sourceden_map.hd5')+'" \n')
-        elif datamodel_lines[i][0:13] == 'ast_N_bins = ':
-            new_file.write('ast_N_bins = '+str(ast_n_bins)+'\n')
-        elif datamodel_lines[i][0:22] == 'ast_reference_image = ':
-            new_file.write('ast_reference_image = "' + ref_image+'" \n')
-        elif datamodel_lines[i][0:21] == 'ast_coord_boundary = ':
+        elif datamodel_lines[i][0:20] == "ast_density_table = ":
+            new_file.write(
+                'ast_density_table = "'
+                + gst_file.replace(".fits", "_sourceden_map.hd5")
+                + '" \n'
+            )
+        elif datamodel_lines[i][0:13] == "ast_N_bins = ":
+            new_file.write("ast_N_bins = " + str(ast_n_bins) + "\n")
+        elif datamodel_lines[i][0:22] == "ast_reference_image = ":
+            new_file.write('ast_reference_image = "' + ref_image + '" \n')
+        elif datamodel_lines[i][0:21] == "ast_coord_boundary = ":
             if boundary_ra is not None:
-                new_file.write('ast_coord_boundary = [np.array([' + ', '.join(str(x) for x in boundary_ra) + ']), \n'
-                                   + ' '*22 + 'np.array([' + ', '.join(str(x) for x in boundary_dec) + ']) ] \n')
+                new_file.write(
+                    "ast_coord_boundary = [np.array(["
+                    + ", ".join(str(x) for x in boundary_ra)
+                    + "]), \n"
+                    + " " * 22
+                    + "np.array(["
+                    + ", ".join(str(x) for x in boundary_dec)
+                    + "]) ] \n"
+                )
         # none of those -> write line as-is
         else:
             new_file.write(datamodel_lines[i])
@@ -330,11 +349,6 @@ def create_datamodel(gst_file, ast_file, gst_filter_label, beast_filter_label,
     new_file.close()
 
 
-
-
-
-
-
-if __name__ == '__main__':
+if __name__ == "__main__":
 
     beast_production_wrapper()

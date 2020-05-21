@@ -264,7 +264,7 @@ if __name__ == "__main__":
                 sfiltername = obsdata.data.resolve_alias(filtername)
                 sfiltername = sfiltername.replace("rate", "vega")
                 sfiltername = sfiltername.replace("RATE", "VEGA")
-                keep, = np.where(obsdata[sfiltername] < 99.0)
+                (keep,) = np.where(obsdata[sfiltername] < 99.0)
                 faintest_mags[k] = np.percentile(obsdata[keep][sfiltername], 90.0)
                 brightest_mags[k] = np.amin(obsdata[keep][sfiltername])
 
@@ -454,7 +454,13 @@ if __name__ == "__main__":
 
             if args.dens_bin is not None:
                 # Put everything in the right subfolder
-                trimmed_modelsedgridfile, trimmed_noisemodelfile, lnpfile, statsfile, pdf1dfile = [
+                (
+                    trimmed_modelsedgridfile,
+                    trimmed_noisemodelfile,
+                    lnpfile,
+                    statsfile,
+                    pdf1dfile,
+                ) = [
                     os.path.join(bin_subfolder, f)
                     for f in [
                         trimmed_modelsedgridfile,
