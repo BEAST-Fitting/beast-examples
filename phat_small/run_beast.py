@@ -18,6 +18,7 @@ from beast.tools.run import (
     run_fitting,
 )
 from beast.physicsmodel.grid import SEDGrid
+from beast.observationmodel.observations import Observations
 import beast.observationmodel.noisemodel.generic_noisemodel as noisemodel
 from beast.fitting import trim_grid
 from beast.tools import verify_params
@@ -92,7 +93,9 @@ if __name__ == "__main__":
         print("Trimming the model and noise grids")
 
         # read in the observed data
-        obsdata = datamodel.get_obscat(datamodel.obsfile, datamodel.filters)
+        obsdata = Observations(
+            datamodel.obsfile, datamodel.filters, datamodel.obs_colnames
+        )
 
         # get the modesedgrid on which to generate the noisemodel
         modelsedgridfile = (
@@ -105,7 +108,9 @@ if __name__ == "__main__":
 
         # trim the model sedgrid
         sed_trimname = "{0}/{0}_seds_trim.grid.hd5".format(datamodel.project)
-        noisemodel_trimname = "{0}/{0}_noisemodel_trim.grid.hd5".format(datamodel.project)
+        noisemodel_trimname = "{0}/{0}_noisemodel_trim.grid.hd5".format(
+            datamodel.project
+        )
 
         trim_grid.trim_models(
             modelsedgrid,
@@ -119,10 +124,7 @@ if __name__ == "__main__":
     if args.fit:
 
         run_fitting.run_fitting(
-            use_sd=False,
-            nsubs=1,
-            nprocs=1,
-            pdf2d_param_list=['Av', 'M_ini', 'logT']
+            use_sd=False, nsubs=1, nprocs=1, pdf2d_param_list=["Av", "M_ini", "logT"]
         )
 
     if args.resume:
