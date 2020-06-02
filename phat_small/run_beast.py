@@ -122,7 +122,8 @@ if __name__ == "__main__":
             use_sd=False,
             nsubs=1,
             nprocs=1,
-            pdf2d_param_list=['Av', 'M_ini', 'logT']
+            pdf2d_param_list=['Av', 'M_ini', 'logT'],
+            pdf_max_nbins=50,
         )
 
     if args.resume:
