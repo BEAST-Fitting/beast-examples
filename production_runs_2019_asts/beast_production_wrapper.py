@@ -16,7 +16,7 @@ def beast_production_wrapper():
     """
     This does all of the steps for a full production run, and can be used as
     a wrapper to automatically do most steps for multiple fields.
-    * make datamodel.py file
+    * make beast settings file
     * make source density map
     * make background density map
     * make physics model (SED grid)
@@ -24,7 +24,7 @@ def beast_production_wrapper():
 
     Places for user to manually do things:
     * editing code before use
-        - datamodel_template.py: setting up the file with desired parameters
+        - beast_settings_template.py: setting up the file with desired parameters
         - here: list the catalog filter names with the corresponding BEAST names
         - here: choose settings (pixel size, filter, mag range) for the source density map
         - here: choose settings (pixel size, reference image) for the background map
@@ -58,7 +58,7 @@ def beast_production_wrapper():
     # catalog and the BEAST filter names.
     #
     # These will be used to automatically determine the filters present in
-    # each GST file and fill in the datamodel.py file.  The order doesn't
+    # each GST file and fill in the beast settings file.  The order doesn't
     # matter, as long as the order in one list matches the order in the other
     # list.
     #
@@ -165,14 +165,11 @@ def beast_production_wrapper():
         #    region_file=True)
 
         # -----------------
-        # 0. make datamodel file
+        # 0. make beast settings file
         # -----------------
 
-        # need to do this first, because otherwise any old version that exists
-        # will be imported, and changes made here won't get imported again
-
         print("")
-        print("creating datamodel file")
+        print("creating beast settings file")
         print("")
 
         # get the boundaries of the image
@@ -189,7 +186,7 @@ def beast_production_wrapper():
         boundary_ra_erode = [str(x) for x in erode_polygon.exterior.coords.xy[0]]
         boundary_dec_erode = [str(x) for x in erode_polygon.exterior.coords.xy[1]]
 
-        create_datamodel(
+        create_beast_settings(
             gst_file,
             ast_file,
             gst_filter_names,
@@ -198,6 +195,10 @@ def beast_production_wrapper():
             ast_n_bins=ast_n_bins,
             boundary_ra=boundary_ra_erode,
             boundary_dec=boundary_dec_erode,
+        )
+        # load in beast settings
+        settings = beast_settings.beast_settings(
+            "beast_settings_" + field_names[i] + ".txt"
         )
 
         # -----------------
@@ -212,7 +213,9 @@ def beast_production_wrapper():
 
         # only make the physics model if it doesn't already exist
         if not os.path.isfile(model_grid_file):
-            create_physicsmodel.create_physicsmodel(nprocs=1, nsubs=1)
+            create_physicsmodel.create_physicsmodel(
+                settings, nprocs=1, nsubs=settings.n_subgrid
+            )
 
         # -----------------
         # 3. make ASTs
@@ -225,7 +228,7 @@ def beast_production_wrapper():
                 print("")
                 print("creating artificial stars")
                 print("")
-                make_ast_inputs.make_ast_inputs(flux_bin_method=True)
+                make_ast_inputs.make_ast_inputs(settings, flux_bin_method=True)
 
             # make a region file of the ASTs
             make_ds9_region_file.region_file_txt(ast_input_file)
@@ -237,7 +240,7 @@ def beast_production_wrapper():
             continue
 
 
-def create_datamodel(
+def create_beast_settings(
     gst_file,
     ast_file,
     gst_filter_label,
@@ -248,7 +251,7 @@ def create_datamodel(
     boundary_dec=None,
 ):
     """
-    Create a datamodel.py file for the given field.  This will open the file to
+    Create a beast settings file for the given field.  This will open the file to
     determine the filters present - the `*_filter_label` inputs are references
     to properly interpret the file's information.
 
@@ -283,6 +286,8 @@ def create_datamodel(
 
     # read in the catalog
     cat = Table.read(gst_file)
+    # extract field name
+    field_name = gst_file.split("/")[-1].split(".")[0]
 
     # get the list of filters
     filter_list_base = []
@@ -293,45 +298,45 @@ def create_datamodel(
             filter_list_base.append(gst_filter_label[f])
             filter_list_long.append(beast_filter_label[f])
 
-    # read in the template datamodel file
-    orig_file = open("datamodel_template.py", "r")
-    datamodel_lines = np.array(orig_file.readlines())
+    # read in the template settings file
+    orig_file = open("beast_settings_template.py", "r")
+    settings_lines = np.array(orig_file.readlines())
     orig_file.close()
 
-    # write out an edited datamodel
-    new_file = open("datamodel.py", "w")
+    # write out an edited beast_settings
+    new_file = open("beast_settings_"+field_name+".txt", "w")
 
-    for i in range(len(datamodel_lines)):
+    for i in range(len(settings_lines)):
 
         # replace project name with the field ID
-        if datamodel_lines[i][0:10] == "project = ":
+        if settings_lines[i][0:10] == "project = ":
             new_file.write(
-                'project = "' + gst_file.split("/")[-1].split(".")[0] + '_beast"\n'
+                'project = "' + field_name + '_beast"\n'
             )
         # obsfile
-        elif datamodel_lines[i][0:10] == "obsfile = ":
+        elif settings_lines[i][0:10] == "obsfile = ":
             new_file.write('obsfile = "' + gst_file + '"\n')
         # AST file name
-        elif datamodel_lines[i][0:10] == "astfile = ":
+        elif settings_lines[i][0:10] == "astfile = ":
             new_file.write('astfile = "' + ast_file + '"\n')
         # BEAST filter names
-        elif datamodel_lines[i][0:10] == "filters = ":
+        elif settings_lines[i][0:10] == "filters = ":
             new_file.write("filters = ['" + "','".join(filter_list_long) + "'] \n")
         # catalog filter names
-        elif datamodel_lines[i][0:14] == "basefilters = ":
+        elif settings_lines[i][0:14] == "basefilters = ":
             new_file.write("basefilters = ['" + "','".join(filter_list_base) + "'] \n")
         # AST stuff
-        elif datamodel_lines[i][0:20] == "ast_density_table = ":
+        elif settings_lines[i][0:20] == "ast_density_table = ":
             new_file.write(
                 'ast_density_table = "'
                 + gst_file.replace(".fits", "_sourceden_map.hd5")
                 + '" \n'
             )
-        elif datamodel_lines[i][0:13] == "ast_N_bins = ":
+        elif settings_lines[i][0:13] == "ast_N_bins = ":
             new_file.write("ast_N_bins = " + str(ast_n_bins) + "\n")
-        elif datamodel_lines[i][0:22] == "ast_reference_image = ":
+        elif settings_lines[i][0:22] == "ast_reference_image = ":
             new_file.write('ast_reference_image = "' + ref_image + '" \n')
-        elif datamodel_lines[i][0:21] == "ast_coord_boundary = ":
+        elif settings_lines[i][0:21] == "ast_coord_boundary = ":
             if boundary_ra is not None:
                 new_file.write(
                     "ast_coord_boundary = [np.array(["
@@ -344,7 +349,7 @@ def create_datamodel(
                 )
         # none of those -> write line as-is
         else:
-            new_file.write(datamodel_lines[i])
+            new_file.write(settings_lines[i])
 
     new_file.close()
 
