@@ -1,7 +1,6 @@
-"""
-Data Model interface v2.0
-BEAST datamodel for LMC METAL fields
-"""
+# """
+# Data Model interface v3.0
+# """
 import numpy as np
 
 from astropy import units
@@ -34,20 +33,12 @@ surveyname = "LUVIT"
 
 # filters : list of strings
 #   full filter names in BEAST filter database
-filters = [
-    "HST_WFC3_F275W",
-    "HST_WFC3_F336W",
-    "HST_WFC3_F390M",
-    "HST_WFC3_F555W",
-    "HST_WFC3_F814W",
-    "HST_WFC3_F110W",
-    "HST_WFC3_F160W",
-]
+filters = []
 
 
 # basefilters : list of strings
 #   short names for filters
-basefilters = ["F275W", "F336W", "F390M", "F555W", "F814W", "F110W", "F160W"]
+basefilters = []
 
 # obs_colnames : list of strings
 #   names of columns for filters in the observed catalog
@@ -58,7 +49,7 @@ obs_colnames = [f.upper() + "_RATE" for f in basefilters]
 
 # obsfile : string
 #   pathname of the observed catalog
-obsfile = "./data/15275_IC1613.gst.fits"
+obsfile = ""
 
 # ------------------------------------------------------
 # Artificial Star Test Input File Generation Parameters
@@ -169,13 +160,13 @@ n_subgrid = 10
 # Distance/Velocity
 
 # Distances: distance to the galaxy [min, max, step] or [fixed number]
-distances = [24.36]
+distances = []
 # Distance unit (any length or units.mag)
 distance_unit = units.mag
 distance_prior_model = {'name': 'flat'}
 
 # velocity of galaxy
-velocity = -236 * units.km / units.s
+velocity = 999
 
 ################
 

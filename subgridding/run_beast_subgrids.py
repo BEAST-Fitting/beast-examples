@@ -1,10 +1,6 @@
 #!/usr/bin/env python
 """
 Script to run the BEAST on the PHAT-like data.
-Assumes that the datamodel.py file exists in the same directory as this script.
-  And it must be called datamodel.py
-     used in make_model.py code in physicsmodel, more recoding needed to remove
-     this dependency
 """
 
 # system imports
@@ -22,38 +18,18 @@ from beast.physicsmodel.model_grid import (
     make_extinguished_sed_grid,
 )
 
+from beast.observationmodel.observations import Observations
 import beast.observationmodel.noisemodel.generic_noisemodel as noisemodel
 from beast.observationmodel.ast import make_ast_input_list, make_ast_xy_list
-from beast.fitting import fit
-from beast.fitting import trim_grid
+from beast.fitting import fit, trim_grid
 from beast.physicsmodel.grid import FileSEDGrid
-from beast.tools import verify_params
-from beast.tools import subgridding_tools
+from beast.tools import beast_settings, subgridding_tools
 
 import pickle
-
-
-# import datamodel
-# print("Import statement gets datamodel from {}.".format(datamodel.__file__))
-# print("Distances are {}".format(datamodel.distances))
-
-# import runpy, os
-
-# print("runpy.run_path runs code from {}.".format(datamodelfile))
-# datamodel_globals = runpy.run_path(datamodelfile)
-# print("Distances are {}".format(datamodel_globals['distances']))
-
-# https://stackoverflow.com/questions/67631/how-to-import-a-module-given-the-full-path
-import importlib.util
 import os
 
-datamodelfile = os.path.join(os.getcwd(), "datamodel.py")
-spec = importlib.util.spec_from_file_location("datamodel", datamodelfile)
-datamodel = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(datamodel)
-print("Project name: {}".format(datamodel.project))
-
-outdir = os.path.join(".", datamodel.project)
+settings = beast_settings.beast_settings('beast_settings.txt')
+outdir = os.path.join(".", settings.project)
 subgrid_names_file = os.path.join(outdir, "subgrid_fnames.txt")
 
 if __name__ == "__main__":
@@ -142,9 +118,6 @@ if __name__ == "__main__":
     def subcatalog_fname(full_cat_fname, dens_bin):
         return full_cat_fname.replace(".fits", "_bin{}.fits".format(dens_bin))
 
-    # check input parameters, print what is the problem, stop run_beast
-    verify_params.verify_input_format(datamodel)
-
     def parallel_wrapper(function, argument):
         parallel = args.nprocs > 1
         if parallel:
@@ -167,43 +140,43 @@ if __name__ == "__main__":
     if args.physicsmodel:
 
         # make sure the project directory exists
-        pdir = create_project_dir(datamodel.project)
+        pdir = create_project_dir(settings.project)
 
         # download and load the isochrones
         (iso_fname, oiso) = make_iso_table(
-            datamodel.project,
-            oiso=datamodel.oiso,
-            logtmin=datamodel.logt[0],
-            logtmax=datamodel.logt[1],
-            dlogt=datamodel.logt[2],
-            z=datamodel.z,
+            settings.project,
+            oiso=settings.oiso,
+            logtmin=settings.logt[0],
+            logtmax=settings.logt[1],
+            dlogt=settings.logt[2],
+            z=settings.z,
         )
 
-        if hasattr(datamodel, "add_spectral_properties_kwargs"):
-            extra_kwargs = datamodel.add_spectral_properties_kwargs
+        if hasattr(settings, "add_spectral_properties_kwargs"):
+            extra_kwargs = settings.add_spectral_properties_kwargs
         else:
             extra_kwargs = None
 
         # generate the spectral library (no dust extinction)
         (spec_fname, g_spec) = make_spectral_grid(
-            datamodel.project,
+            settings.project,
             oiso,
-            osl=datamodel.osl,
-            distance=datamodel.distances,
-            distance_unit=datamodel.distance_unit,
-            extLaw=datamodel.extLaw,
+            osl=settings.osl,
+            distance=settings.distances,
+            distance_unit=settings.distance_unit,
+            extLaw=settings.extLaw,
             add_spectral_properties_kwargs=extra_kwargs,
         )
 
         # Work with the whole grid up to here (otherwise, priors need a
         # rework (they don't like having only a subset of the parameter
         # space, especially when there's only one age for example)
-        (pspec_fname, g_pspec) = add_stellar_priors(datamodel.project, g_spec)
+        (pspec_fname, g_pspec) = add_stellar_priors(settings.project, g_spec)
 
         # Make subgrids, by splitting the spectral grid into equal sized pieces
         custom_sub_pspec = subgridding_tools.split_grid(pspec_fname, args.nsubs)
 
-        file_prefix = "{0}/{0}_".format(datamodel.project)
+        file_prefix = "{0}/{0}_".format(settings.project)
 
         # process the subgrids individually
         def gen_subgrid(i, sub_name):
@@ -211,16 +184,16 @@ if __name__ == "__main__":
             sub_seds_fname = "{}seds.gridsub{}.hd5".format(file_prefix, i)
 
             (sub_seds_fname, sub_g_seds) = make_extinguished_sed_grid(
-                datamodel.project,
+                settings.project,
                 sub_g_pspec,
-                datamodel.filters,
-                extLaw=datamodel.extLaw,
-                av=datamodel.avs,
-                rv=datamodel.rvs,
-                fA=datamodel.fAs,
-                rv_prior_model=datamodel.rv_prior_model,
-                av_prior_model=datamodel.av_prior_model,
-                fA_prior_model=datamodel.fA_prior_model,
+                settings.filters,
+                extLaw=settings.extLaw,
+                av=settings.avs,
+                rv=settings.rvs,
+                fA=settings.fAs,
+                rv_prior_model=settings.rv_prior_model,
+                av_prior_model=settings.av_prior_model,
+                fA_prior_model=settings.fA_prior_model,
                 add_spectral_properties_kwargs=extra_kwargs,
                 seds_fname=sub_seds_fname,
             )
@@ -252,14 +225,16 @@ if __name__ == "__main__":
 
     if args.ast:
         # Determine magnitude range for ASTs
-        mag_cuts = datamodel.ast_maglimit
+        mag_cuts = settings.ast_maglimit
         bright_cuts = None
         if len(mag_cuts) == 1:
             tmp_cuts = mag_cuts
-            obsdata = datamodel.get_obscat(datamodel.obsfile, datamodel.filters)
+            obsdata = Observations(
+                settings.obsfile, settings.filters, obs_colnames=settings.obs_colnames
+            )
 
-            faintest_mags = np.zeros(len(datamodel.filters))
-            brightest_mags = np.zeros(len(datamodel.filters))
+            faintest_mags = np.zeros(len(settings.filters))
+            brightest_mags = np.zeros(len(settings.filters))
             for k, filtername in enumerate(obsdata.filters):
                 sfiltername = obsdata.data.resolve_alias(filtername)
                 sfiltername = sfiltername.replace("rate", "vega")
@@ -277,22 +252,22 @@ if __name__ == "__main__":
             )  # this many mags brighter than the brightest source
 
         # Choose seds for ASTs
-        modelsedgridfile = os.path.join(outdir, datamodel.project + "_seds.grid.hd5")
-        outfile_chosenSEDs = os.path.join(outdir, datamodel.project + "_chosenSEDs.txt")
-        N_per_age = datamodel.ast_models_selected_per_age
-        Nfilters = datamodel.ast_bands_above_maglimit
-        Nrealize = datamodel.ast_realization_per_model
+        modelsedgridfile = os.path.join(outdir, settings.project + "_seds.grid.hd5")
+        outfile_chosenSEDs = os.path.join(outdir, settings.project + "_chosenSEDs.txt")
+        N_per_age = settings.ast_models_selected_per_age
+        Nfilters = settings.ast_bands_above_maglimit
+        Nrealize = settings.ast_realization_per_model
 
         toothpick_style = True
         if toothpick_style:
             N_fluxes = 25
             min_N_per_flux = 50
             bins_outfile = os.path.join(
-                outdir, datamodel.project + "_toothpick_style_bins.txt"
+                outdir, settings.project + "_toothpick_style_bins.txt"
             )
             chosen_seds = make_ast_input_list.pick_models_toothpick_style(
                 modelsedgridfile,
-                datamodel.filters,
+                settings.filters,
                 mag_cuts,
                 Nfilters,
                 N_fluxes,
@@ -304,7 +279,7 @@ if __name__ == "__main__":
         else:
             chosen_seds = make_ast_input_list.pick_models(
                 modelsedgridfile,
-                datamodel.filters,
+                settings.filters,
                 mag_cuts,
                 Nfilters,
                 N_per_age,
@@ -313,14 +288,14 @@ if __name__ == "__main__":
             )
 
         # Assign positions for ASTs
-        outfile_inputAST = os.path.join(outdir, datamodel.project + "_inputAST.txt")
+        outfile_inputAST = os.path.join(outdir, settings.project + "_inputAST.txt")
         make_ast_xy_list.pick_positions_from_map(
             chosen_seds,
-            input_map=datamodel.ast_bg_map_file,
-            N_bins=datamodel.ast_bg_nbins,
+            input_map=settings.ast_bg_map_file,
+            N_bins=settings.ast_bg_nbins,
             Npermodel=10,
             outfile=outfile_inputAST,
-            refimage=datamodel.ast_reference_image,
+            refimage=settings.ast_reference_image,
             Nrealize=1,
         )
 
@@ -335,7 +310,7 @@ if __name__ == "__main__":
 
             # generate the AST noise model
             noisefile = modelsedgridfile.replace("seds", "noisemodel")
-            astfile = datamodel.astfile
+            astfile = settings.astfile
 
             # If we are treating regions with different
             # backgrounds/source densities separately, pick one of the
@@ -349,7 +324,7 @@ if __name__ == "__main__":
                 noisefile,
                 astfile,
                 modelsedgrid,
-                absflux_a_matrix=datamodel.absflux_a_matrix,
+                absflux_a_matrix=settings.absflux_a_matrix,
             )
 
             return outname
@@ -360,10 +335,12 @@ if __name__ == "__main__":
         print("Trimming the model and noise grids")
 
         # read in the observed data
-        obsfile = datamodel.obsfile
+        obsfile = settings.obsfile
         if args.dens_bin is not None:
             obsfile = subcatalog_fname(obsfile, args.dens_bin)
-        obsdata = datamodel.get_obscat(obsfile, datamodel.filters)
+        obsdata = Observations(
+            obsfile, settings.filters, obs_colnames=settings.obs_colnames
+        )
 
         modelsedgridfiles = get_modelsubgridfiles()[subset_slice]
 
@@ -399,11 +376,13 @@ if __name__ == "__main__":
         start_time = time.clock()
 
         # read in the observed data
-        obsfile = datamodel.obsfile
+        obsfile = settings.obsfile
         if args.dens_bin is not None:
             obsfile = subcatalog_fname(obsfile, args.dens_bin)
 
-        obsdata = datamodel.get_obscat(obsfile, datamodel.filters)
+        obsdata = Observations(
+            obsfile, settings.filters, obs_colnames=settings.obs_colnames
+        )
 
         modelsedgridfiles = get_modelsubgridfiles()
         trimmed_modelsedgridfiles = [
@@ -505,7 +484,7 @@ if __name__ == "__main__":
         with_fits = [s.replace(".hd5", ".fits") for s in modelsedgridfiles]
         pdf1dfiles = [s.replace("seds", "pdf1d") for s in with_fits]
         statsfiles = [s.replace("seds", "stats") for s in with_fits]
-        output_fname_base = os.path.join(datamodel.project, "combined")
+        output_fname_base = os.path.join(settings.project, "combined")
         if args.dens_bin is not None:
             pdf1dfiles, statsfiles = [
                 [os.path.join(bin_subfolder, f) for f in l]

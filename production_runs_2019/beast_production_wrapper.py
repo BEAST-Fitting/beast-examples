@@ -15,22 +15,13 @@ from beast.tools.run import (
 
 from beast.plotting import plot_mag_hist
 from beast.tools import (
+    beast_settings,
     create_background_density_map,
     split_ast_input_file,
     cut_catalogs,
     setup_batch_beast_fit,
 )
 
-import importlib
-
-importlib.reload(create_physicsmodel)
-importlib.reload(make_ast_inputs)
-importlib.reload(create_obsmodel)
-importlib.reload(make_trim_scripts)
-importlib.reload(run_fitting)
-importlib.reload(setup_batch_beast_fit)
-importlib.reload(merge_files)
-importlib.reload(create_filenames)
 
 from astropy.table import Table
 from astropy.coordinates import Angle
@@ -41,7 +32,7 @@ def beast_production_wrapper():
     """
     This does all of the steps for a full production run, and can be used as
     a wrapper to automatically do most steps for multiple fields.
-    * make datamodel.py file
+    * make field's beast_settings file
     * make source density map
     * make background density map
     * split catalog by source density
@@ -55,7 +46,7 @@ def beast_production_wrapper():
 
     Places for user to manually do things:
     * editing code before use
-        - datamodel_template.py: setting up the file with desired parameters
+        - beast_settings_template.py: setting up the file with desired parameters
         - here: list the catalog filter names with the corresponding BEAST names
         - here: choose settings (pixel size, filter, mag range) for the source density map
         - here: choose settings (pixel size, reference image) for the background map
@@ -65,9 +56,6 @@ def beast_production_wrapper():
     * run the trimming scripts
     * run the fitting scripts
 
-    BEWARE: When running the trimming/fitting scripts, ensure that the correct
-    datamodel.py file is in use.  Since it gets updated every time this code is
-    run, you may be unexpectedly be using one from another field.
     """
 
     # the list of fields
@@ -93,7 +81,7 @@ def beast_production_wrapper():
     # catalog and the BEAST filter names.
     #
     # These will be used to automatically determine the filters present in
-    # each GST file and fill in the datamodel.py file.  The order doesn't
+    # each GST file and fill in the beast settings file.  The order doesn't
     # matter, as long as the order in one list matches the order in the other
     # list.
     #
@@ -129,17 +117,14 @@ def beast_production_wrapper():
         # make_region_file(gst_file, ref_filter[b])
 
         # -----------------
-        # 0. make datamodel file
+        # 0. make beast settings file
         # -----------------
 
-        # need to do this first, because otherwise any old version that exists
-        # will be imported, and changes made here won't get imported again
-
         print("")
-        print("creating datamodel file")
+        print("creating beast settings file")
         print("")
 
-        create_datamodel(
+        create_beast_settings(
             gst_file,
             ast_file,
             gst_filter_names,
@@ -149,10 +134,10 @@ def beast_production_wrapper():
             ref_image=im_file,
         )
 
-        # load in datamodel to get number of subgrids
-        import datamodel
-
-        importlib.reload(datamodel)
+        # load in beast settings to get number of subgrids
+        settings = beast_settings.beast_settings(
+            "beast_settings_" + field_names[i] + ".txt"
+        )
 
         # -----------------
         # 1a. make magnitude histograms
@@ -218,7 +203,7 @@ def beast_production_wrapper():
 
         # see which subgrid files already exist
         gs_str = ""
-        if datamodel.n_subgrid > 1:
+        if settings.n_subgrid > 1:
             gs_str = "sub*"
 
         sed_files = glob.glob(
@@ -226,11 +211,13 @@ def beast_production_wrapper():
         )
 
         # only make the physics model they don't already exist
-        if len(sed_files) < datamodel.n_subgrid:
+        if len(sed_files) < settings.n_subgrid:
             # directly create physics model grids
-            #create_physicsmodel.create_physicsmodel(nprocs=1, nsubs=datamodel.n_subgrid)
+            #create_physicsmodel.create_physicsmodel(nprocs=1, nsubs=settings.n_subgrid)
             # create grids with script
-            create_physicsmodel.split_create_physicsmodel(nprocs=1, nsubs=datamodel.n_subgrid)
+            create_physicsmodel.split_create_physicsmodel(
+                settings, nprocs=1, nsubs=settings.n_subgrid
+            )
             print('\n**** go run physics model code for '+field_names[b]+'! ****')
             continue
 
@@ -249,7 +236,7 @@ def beast_production_wrapper():
                 print("")
                 print("creating artificial stars")
                 print("")
-                make_ast_inputs.make_ast_inputs(flux_bin_method=True)
+                make_ast_inputs.make_ast_inputs(settings, flux_bin_method=True)
 
             split_ast_input_file.split_asts(
                 field_names[b] + "_beast", ast_input_file, 2000
@@ -284,9 +271,9 @@ def beast_production_wrapper():
             region_file=True,
         )
 
-        # edit the datamodel.py file to have the correct photometry file name
+        # edit the beast settings file to have the correct photometry file name
         # (AST file name is already automatically the cut version)
-        create_datamodel(
+        create_beast_settings(
             gst_file_cut,
             ast_file_cut,
             gst_filter_names,
@@ -294,6 +281,11 @@ def beast_production_wrapper():
             dist_mod[b],
             velocity[b],
             ref_image=im_file,
+        )
+
+        # load in the new settings
+        settings = beast_settings.beast_settings(
+            "beast_settings_" + field_names[i] + ".txt"
         )
 
         # -----------------
@@ -323,7 +315,7 @@ def beast_production_wrapper():
 
         # -- at this point, we can run the code to create lists of filenames
         file_dict = create_filenames.create_filenames(
-            use_sd=True, nsubs=datamodel.n_subgrid
+            settings, use_sd=True, nsubs=settings.n_subgrid
         )
 
         # figure out how many files there are
@@ -347,7 +339,7 @@ def beast_production_wrapper():
 
         # create the noise model (this code will check if it exists)
         create_obsmodel.create_obsmodel(
-            use_sd=True, nsubs=datamodel.n_subgrid, nprocs=1
+            settings, use_sd=True, nsubs=settings.n_subgrid, nprocs=1
         )
 
         # -----------------
@@ -359,7 +351,7 @@ def beast_production_wrapper():
         print("")
 
         job_file_list = make_trim_scripts.make_trim_scripts(
-            num_subtrim=1, prefix='source activate b13'
+            settings, num_subtrim=1, prefix='source activate b13'
         )
 
         if len(job_file_list) > 0:
@@ -382,12 +374,13 @@ def beast_production_wrapper():
         print("")
 
         fit_run_info = setup_batch_beast_fit.setup_batch_beast_fit(
+            settings,
             num_percore=1,
             nice=19,
             overwrite_logfile=False,
             prefix="source activate b13",
             use_sd=True,
-            nsubs=datamodel.n_subgrid,
+            nsubs=settings.n_subgrid,
             nprocs=1,
         )
 
@@ -414,10 +407,10 @@ def beast_production_wrapper():
         print("merging stats files")
         print("")
 
-        merge_files.merge_files(use_sd=True, nsubs=datamodel.n_subgrid)
+        merge_files.merge_files(settings, use_sd=True, nsubs=settings.n_subgrid)
 
 
-def create_datamodel(
+def create_beast_settings(
     gst_file,
     ast_file,
     gst_filter_label,
@@ -427,7 +420,7 @@ def create_datamodel(
     ref_image="None",
 ):
     """
-    Create a datamodel.py file for the given field.  This will open the file to
+    Create a beast_settings file for the given field.  This will open the file to
     determine the filters present - the `*_filter_label` inputs are references
     to properly interpret the file's information.
 
@@ -462,6 +455,8 @@ def create_datamodel(
 
     # read in the catalog
     cat = Table.read(gst_file)
+    # extract field name
+    field_name = gst_file.split("/")[-1].split(".")[0]
 
     # get the list of filters
     filter_list_base = []
@@ -472,47 +467,45 @@ def create_datamodel(
             filter_list_base.append(gst_filter_label[f])
             filter_list_long.append(beast_filter_label[f])
 
-    # read in the template datamodel file
-    orig_file = open("datamodel_template.py", "r")
-    datamodel_lines = np.array(orig_file.readlines())
+    # read in the template settings file
+    orig_file = open("beast_settings_template.py", "r")
+    settings_lines = np.array(orig_file.readlines())
     orig_file.close()
 
-    # write out an edited datamodel
-    new_file = open("datamodel.py", "w")
+    # write out an edited beast_settings
+    new_file = open("beast_settings_"+field_name+".txt", "w")
 
-    for i in range(len(datamodel_lines)):
+    for i in range(len(settings_lines)):
 
         # replace project name with the field ID
-        if datamodel_lines[i][0:10] == "project = ":
-            new_file.write(
-                'project = "' + gst_file.split("/")[-1].split(".")[0] + '_beast"\n'
-            )
+        if settings_lines[i][0:10] == "project = ":
+            new_file.write('project = "' + field_name + '_beast"\n')
         # obsfile
-        elif datamodel_lines[i][0:10] == "obsfile = ":
+        elif settings_lines[i][0:10] == "obsfile = ":
             new_file.write('obsfile = "' + gst_file + '"\n')
         # AST file name
-        elif datamodel_lines[i][0:10] == "astfile = ":
+        elif settings_lines[i][0:10] == "astfile = ":
             new_file.write('astfile = "' + ast_file + '"\n')
         # BEAST filter names
-        elif datamodel_lines[i][0:10] == "filters = ":
+        elif settings_lines[i][0:10] == "filters = ":
             new_file.write("filters = ['" + "','".join(filter_list_long) + "'] \n")
         # catalog filter names
-        elif datamodel_lines[i][0:14] == "basefilters = ":
+        elif settings_lines[i][0:14] == "basefilters = ":
             new_file.write("basefilters = ['" + "','".join(filter_list_base) + "'] \n")
         # distance modulus
-        elif datamodel_lines[i][0:12] == "distances = ":
+        elif settings_lines[i][0:12] == "distances = ":
             new_file.write("distances = [" + str(dist_mod) + "] \n")
         # velocity
-        elif datamodel_lines[i][0:11] == "velocity = ":
+        elif settings_lines[i][0:11] == "velocity = ":
             new_file.write("velocity = " + str(velocity) + " * units.km / units.s \n")
         # AST stuff
-        # elif datamodel_lines[i][0:27] == 'ast_source_density_table = ':
+        # elif settings_lines[i][0:27] == 'ast_source_density_table = ':
         #    new_file.write('ast_source_density_table = "' + gst_file.replace('.fits','_sourcedens_map.hd5')+'" \n')
-        elif datamodel_lines[i][0:22] == "ast_reference_image = ":
+        elif settings_lines[i][0:22] == "ast_reference_image = ":
             new_file.write('ast_reference_image = "' + ref_image + '" \n')
         # none of those -> write line as-is
         else:
-            new_file.write(datamodel_lines[i])
+            new_file.write(settings_lines[i])
 
     new_file.close()
 
