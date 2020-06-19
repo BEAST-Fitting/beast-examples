@@ -59,7 +59,7 @@ obs_colnames = [f.upper() + "_RATE" for f in basefilters]
 
 # obsfile : string
 #   pathname of the observ￼ed catalog
-obsfile ="./M31-B09-EAST_chunk.st_with_sourceden.fits" 
+obsfile = "./M31-B09-EAST_chunk.st_with_sourceden.fits"
 
 # ------------------------------------------------------
 # Artificial Star Test Input File Generation Parameters
@@ -141,7 +141,7 @@ ast_coord_boundary = None
 
 # astfile : string
 #   pathname of the AST files (single camera ASTs)
-astfile = "M31-B09-EAST_chunk.gst.fake.fits"
+astfile = "./M31-B09-EAST_chunk.gst.fake.fits"
 #astfile = "M31-B09-EAST_chunk.gst.fake_cut.fits"
 
 # ast_colnames : list of strings
@@ -172,6 +172,7 @@ n_subgrid = 1
 # Distances: distance to the galaxy [min, max, step] or [fixed number]
 distances = [24.79]#[24.29, 25.29, 0.25] #number was originally 24.79
 #used 2013AJ....146...86T as a reference
+distance_prior_model = {"name": "flat"}
 
 # Distance unit (any length or units.mag)
 distance_unit = units.mag
