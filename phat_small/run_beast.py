@@ -1,10 +1,6 @@
 #!/usr/bin/env python
 """
 Script to run the BEAST on the PHAT-like data.
-Assumes that the datamodel.py file exists in the same directory as this script.
-  And it must be called datamodel.py
-     used in make_model.py code in physicsmodel, more recoding needed to remove
-     this dependency
 """
 
 # system imports
@@ -17,13 +13,11 @@ from beast.tools.run import (
     create_obsmodel,
     run_fitting,
 )
-from beast.physicsmodel.grid import FileSEDGrid
+from beast.physicsmodel.grid import SEDGrid
+from beast.observationmodel.observations import Observations
 import beast.observationmodel.noisemodel.generic_noisemodel as noisemodel
 from beast.fitting import trim_grid
-from beast.tools import verify_params
-
-
-import datamodel
+from beast.tools import beast_settings
 
 
 if __name__ == "__main__":
@@ -58,54 +52,60 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    # check input parameters, print what is the problem, stop run_beast
-    verify_params.verify_input_format(datamodel)
+    # read in BEAST settings
+    settings = beast_settings.beast_settings("beast_settings.txt")
 
     if args.physicsmodel:
 
-        create_physicsmodel.create_physicsmodel(nsubs=1, nprocs=1)
+        create_physicsmodel.create_physicsmodel(
+            settings, nsubs=settings.n_subgrid, nprocs=1,
+        )
 
     if args.ast:
 
-        make_ast_inputs.make_ast_inputs(flux_bin_method=False)
+        make_ast_inputs.make_ast_inputs(settings, flux_bin_method=False)
 
     if args.observationmodel:
         print("Generating noise model from ASTs and absflux A matrix")
 
-        create_obsmodel.create_obsmodel(use_sd=False, nsubs=1, nprocs=1, use_rate=False)
+        create_obsmodel.create_obsmodel(
+            settings, use_sd=False, nsubs=settings.n_subgrid, nprocs=1, use_rate=False,
+        )
 
         # in the absence of ASTs, the splinter noise model can be used
         # instead of the toothpick model above
         #  **warning** not very realistic
         # import beast.observationmodel.noisemodel.splinter as noisemodel
         #
-        # modelsedgridfile = datamodel.project + '/' + datamodel.project + \
+        # modelsedgridfile = settings.project + '/' + settings.project + \
         #    '_seds.grid.hd5'
         # modelsedgrid = FileSEDGrid(modelsedgridfile)
         #
         # noisemodel.make_splinter_noise_model(
-        #    datamodel.noisefile,
+        #    settings.noisefile,
         #    modelsedgrid,
-        #    absflux_a_matrix=datamodel.absflux_a_matrix)
+        #    absflux_a_matrix=settings.absflux_a_matrix)
 
     if args.trim:
         print("Trimming the model and noise grids")
 
         # read in the observed data
-        obsdata = datamodel.get_obscat(datamodel.obsfile, datamodel.filters)
+        obsdata = Observations(
+            settings.obsfile, settings.filters, settings.obs_colnames
+        )
 
         # get the modesedgrid on which to generate the noisemodel
-        modelsedgridfile = (
-            datamodel.project + "/" + datamodel.project + "_seds.grid.hd5"
-        )
-        modelsedgrid = FileSEDGrid(modelsedgridfile)
+        modelsedgridfile = settings.project + "/" + settings.project + "_seds.grid.hd5"
+        modelsedgrid = SEDGrid(modelsedgridfile)
 
         # read in the noise model just created
-        noisemodel_vals = noisemodel.get_noisemodelcat(datamodel.noisefile)
+        noisemodel_vals = noisemodel.get_noisemodelcat(settings.noisefile)
 
         # trim the model sedgrid
-        sed_trimname = "{0}/{0}_seds_trim.grid.hd5".format(datamodel.project)
-        noisemodel_trimname = "{0}/{0}_noisemodel_trim.grid.hd5".format(datamodel.project)
+        sed_trimname = "{0}/{0}_seds_trim.grid.hd5".format(settings.project)
+        noisemodel_trimname = "{0}/{0}_noisemodel_trim.grid.hd5".format(
+            settings.project
+        )
 
         trim_grid.trim_models(
             modelsedgrid,
@@ -118,11 +118,19 @@ if __name__ == "__main__":
 
     if args.fit:
 
-        run_fitting.run_fitting(use_sd=False, nsubs=1, nprocs=1)
+        run_fitting.run_fitting(
+            settings,
+            use_sd=False,
+            nsubs=settings.n_subgrid,
+            nprocs=1,
+            pdf2d_param_list=["Av", "M_ini", "logT"],
+        )
 
     if args.resume:
 
-        run_fitting.run_fitting(use_sd=False, nsubs=1, nprocs=1, resume=True)
+        run_fitting.run_fitting(
+            settings, use_sd=False, nsubs=settings.n_subgrid, nprocs=1, resume=True
+        )
 
     # print help if no arguments
     if not any(vars(args).values()):

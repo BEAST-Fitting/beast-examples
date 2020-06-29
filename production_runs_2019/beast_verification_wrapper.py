@@ -42,7 +42,7 @@ def beast_verification_wrapper():
 
     Places for user to manually do things:
     * editing code before use
-        - datamodel_template.py: setting up the file with desired parameters
+        - beast_settings_template.py: setting up the file with desired parameters
         - here: list the catalog filter names with the corresponding BEAST names
         - here: number of simulated stars to generate
         - here: choose settings (# files, nice level) for the trimming/fitting batch scripts
@@ -50,9 +50,6 @@ def beast_verification_wrapper():
     * run the trimming scripts
     * run the fitting scripts
 
-    BEWARE: When running the trimming/fitting scripts, ensure that the correct
-    datamodel.py file is in use.  Since it gets updated every time this code is
-    run, you may be unexpectedly be using one from another field.
     """
 
     # the list of fields
@@ -74,7 +71,7 @@ def beast_verification_wrapper():
     # catalog and the BEAST filter names.
     #
     # These will be used to automatically determine the filters present in
-    # each GST file and fill in the datamodel.py file.  The order doesn't
+    # each GST file and fill in the beast settings file.  The order doesn't
     # matter, as long as the order in one list matches the order in the other
     # list.
     #
@@ -110,7 +107,7 @@ def beast_verification_wrapper():
         # path for the reference image (if using for the background map)
         im_file = im_path[b]
 
-        create_datamodel(
+        create_beast_settings(
             gst_file_orig,
             ast_file_orig,
             gst_filter_names,
@@ -121,13 +118,16 @@ def beast_verification_wrapper():
             proj_type='beast',
         )
 
-        # load in datamodel to get number of subgrids
-        import datamodel; importlib.reload(datamodel)
+        # load in beast settings to get number of subgrids
+        settings = beast_settings.beast_settings(
+            "beast_settings_" + field_names[i] + "_beast.txt"
+        )
 
         # grab relevant file names
         file_dict = create_filenames.create_filenames(
+            settings,
             use_sd=True,
-            nsubs=datamodel.n_subgrid,
+            nsubs=settings.n_subgrid,
         )
         modelsedgrid_files = file_dict['modelsedgrid_files']
         noise_files = file_dict['noise_files']
@@ -187,14 +187,14 @@ def beast_verification_wrapper():
             vstack(table_list).write(gst_file, overwrite=True)
 
         # -----------------
-        # 2. make new datamodel file
+        # 2. make new settings file
         # -----------------
 
         print('')
-        print('creating datamodel file')
+        print('creating beast settings file')
         print('')
 
-        create_datamodel(
+        create_beast_settings(
             gst_file,
             ast_file_orig,
             gst_filter_names,
@@ -205,8 +205,10 @@ def beast_verification_wrapper():
             proj_type='sim',
         )
 
-        # load in datamodel again
-        importlib.reload(datamodel)
+        # load in beast settings again
+        settings = beast_settings.beast_settings(
+            "beast_settings_" + field_names[i] + "_sim.txt"
+        )
 
 
         # -----------------
@@ -214,8 +216,8 @@ def beast_verification_wrapper():
         # -----------------
 
         # make new directory
-        if not os.path.isdir('./'+datamodel.project):
-            os.mkdir('./'+datamodel.project)
+        if not os.path.isdir('./'+settings.project):
+            os.mkdir('./'+settings.project)
 
         # symlink the physics/noise models
         orig_phys = list(set(modelsedgrid_files))
@@ -240,7 +242,7 @@ def beast_verification_wrapper():
         print("")
 
         job_file_list = make_trim_scripts.make_trim_scripts(
-            num_subtrim=1, prefix='source activate b13'
+            settings, num_subtrim=1, prefix='source activate b13'
         )
 
         if len(job_file_list) > 0:
@@ -263,12 +265,13 @@ def beast_verification_wrapper():
         print("")
 
         fit_run_info = setup_batch_beast_fit.setup_batch_beast_fit(
+            settings,
             num_percore=1,
             nice=19,
             overwrite_logfile=False,
             prefix="source activate b13",
             use_sd=True,
-            nsubs=datamodel.n_subgrid,
+            nsubs=settings.n_subgrid,
             nprocs=1,
         )
 
@@ -299,7 +302,7 @@ def beast_verification_wrapper():
         # grab relevant file names
         file_dict = create_filenames.create_filenames(
             use_sd=True,
-            nsubs=datamodel.n_subgrid,
+            nsubs=settings.n_subgrid,
         )
 
         plot_param_recovery.plot_param_recovery(
@@ -314,7 +317,7 @@ def beast_verification_wrapper():
             plot_triangle.plot_triangle(stats_file)
 
 
-def create_datamodel(
+def create_beast_settings(
     gst_file,
     ast_file,
     gst_filter_label,
@@ -325,7 +328,7 @@ def create_datamodel(
     proj_type="beast",
 ):
     """
-    Create a datamodel.py file for the given field.  This will open the file to
+    Create a beast_settings file for the given field.  This will open the file to
     determine the filters present - the `*_filter_label` inputs are references
     to properly interpret the file's information.
 
@@ -364,6 +367,9 @@ def create_datamodel(
     # read in the catalog
     cat = Table.read(gst_file)
 
+    # make a project name
+    project = gst_file.split('/')[-1].split('.')[0]+ '_' + proj_type
+
     # get the list of filters
     filter_list_base = []
     filter_list_long = []
@@ -373,47 +379,45 @@ def create_datamodel(
             filter_list_base.append(gst_filter_label[f])
             filter_list_long.append(beast_filter_label[f])
 
-    # read in the template datamodel file
-    orig_file = open("datamodel_template.py", "r")
-    datamodel_lines = np.array(orig_file.readlines())
+    # read in the template beast settings file
+    orig_file = open("beast_settings_template.py", "r")
+    settings_lines = np.array(orig_file.readlines())
     orig_file.close()
 
-    # write out an edited datamodel
-    new_file = open("datamodel.py", "w")
+    # write out an edited beast_settings
+    new_file = open("beast_settings_"+project+".txt", "w")
 
-    for i in range(len(datamodel_lines)):
+    for i in range(len(settings_lines)):
 
         # replace project name with the field ID
-        if datamodel_lines[i][0:10] == 'project = ':
-            new_file.write(
-                'project = "' + gst_file.split('/')[-1].split('.')[0]+ '_'+proj_type+'"\n'
-            )
+        if settings_lines[i][0:10] == 'project = ':
+            new_file.write('project = "' + project +'"\n')
         # obsfile
-        elif datamodel_lines[i][0:10] == "obsfile = ":
+        elif settings_lines[i][0:10] == "obsfile = ":
             new_file.write('obsfile = "' + gst_file + '"\n')
         # AST file name
-        elif datamodel_lines[i][0:10] == "astfile = ":
+        elif settings_lines[i][0:10] == "astfile = ":
             new_file.write('astfile = "' + ast_file + '"\n')
         # BEAST filter names
-        elif datamodel_lines[i][0:10] == "filters = ":
+        elif settings_lines[i][0:10] == "filters = ":
             new_file.write("filters = ['" + "','".join(filter_list_long) + "'] \n")
         # catalog filter names
-        elif datamodel_lines[i][0:14] == "basefilters = ":
+        elif settings_lines[i][0:14] == "basefilters = ":
             new_file.write("basefilters = ['" + "','".join(filter_list_base) + "'] \n")
         # distance modulus
-        elif datamodel_lines[i][0:12] == "distances = ":
+        elif settings_lines[i][0:12] == "distances = ":
             new_file.write("distances = [" + str(dist_mod) + "] \n")
         # velocity
-        elif datamodel_lines[i][0:11] == "velocity = ":
+        elif settings_lines[i][0:11] == "velocity = ":
             new_file.write("velocity = " + str(velocity) + " * units.km / units.s \n")
         # AST stuff
-        # elif datamodel_lines[i][0:27] == 'ast_source_density_table = ':
+        # elif settings_lines[i][0:27] == 'ast_source_density_table = ':
         #    new_file.write('ast_source_density_table = "' + gst_file.replace('.fits','_sourcedens_map.hd5')+'" \n')
-        elif datamodel_lines[i][0:22] == "ast_reference_image = ":
+        elif settings_lines[i][0:22] == "ast_reference_image = ":
             new_file.write('ast_reference_image = "' + ref_image + '" \n')
         # none of those -> write line as-is
         else:
-            new_file.write(datamodel_lines[i])
+            new_file.write(settings_lines[i])
 
     new_file.close()
 
