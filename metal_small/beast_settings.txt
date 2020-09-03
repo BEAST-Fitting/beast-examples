@@ -1,0 +1,70 @@
+# """ Data Model interface v3.0
+# BEAST datamodel for the example based on M31 PHAT data
+# """
+import numpy as np
+from astropy import units
+
+# BEAST imports
+from beast.physicsmodel.stars import isochrone
+from beast.physicsmodel.stars import stellib
+from beast.physicsmodel.dust import extinction
+from beast.observationmodel.noisemodel import absflux_covmat
+
+# condensed settings just for simulations
+# (see beast-examples/phat_small for beast_settings.txt with extensive comments)
+
+project = "beast_metal_small"
+
+surveyname = "METAL"
+
+filters = ['HST_WFC3_F225W', 'HST_WFC3_F275W','HST_WFC3_F336W',
+           'HST_ACS_WFC_F475W','HST_ACS_WFC_F814W',
+           'HST_WFC3_F110W','HST_WFC3_F160W']
+
+basefilters = ["F225W", "F275W", "F336W", "F475W", "F814W", "F110W", "F160W"]
+obs_colnames = [f.upper() + "_RATE" for f in basefilters]
+
+# not needed?
+obsfile = "data/14675_LMC-13361nw-11112.gst_samp.fits"
+
+## observation(noise) model
+
+astfile = "data/14675_LMC-13361nw-11112.gst.fake.fits"
+ast_colnames = np.array(basefilters)
+noisefile = project + "/" + project + "_noisemodel.grid.hd5"
+absflux_a_matrix = absflux_covmat.hst_frac_matrix(filters)
+
+## physics grid
+
+n_subgrid = 1
+
+# stars
+
+velocity = 262.2 * units.km / units.s  # LMC velocity from SIMBAD
+distances = [18.5]
+distance_unit = units.mag
+distance_prior_model = {'name': 'flat'}
+
+logt = [6.0, 10.13, 1.0]
+age_prior_model = {'name': 'flat'}
+mass_prior_model = {"name": "kroupa"}
+z = [0.03, 0.019, 0.008, 0.004]
+# z = [0.0076]
+met_prior_model = {"name": "flat"}
+
+oiso = isochrone.PadovaWeb()
+osl = stellib.Tlusty() + stellib.Kurucz()
+
+# dust
+
+extLaw = extinction.Gordon16_RvFALaw()
+avs = [0.0, 10.055, 1.0]
+av_prior_model = {"name": "flat"}
+rvs = [2.0, 6.0, 1.0]
+rv_prior_model = {"name": "flat"}
+fAs = [0.0, 1.0, 0.25]
+fA_prior_model = {"name": "flat"}
+
+## misc
+
+add_spectral_properties_kwargs = dict(filternames=filters)
