@@ -69,7 +69,7 @@ if __name__ == "__main__":
         print("Generating noise model from ASTs and absflux A matrix")
 
         create_obsmodel.create_obsmodel(
-            settings, use_sd=False, nsubs=settings.n_subgrid, nprocs=1, use_rate=False,
+            settings, use_sd=False, nsubs=settings.n_subgrid, nprocs=1, use_rate=True,
         )
 
         # in the absence of ASTs, the splinter noise model can be used
@@ -123,7 +123,7 @@ if __name__ == "__main__":
             use_sd=False,
             nsubs=settings.n_subgrid,
             nprocs=1,
-            pdf2d_param_list=None,
+            pdf2d_param_list=["Av", "M_ini", "logT"],
         )
 
     if args.resume:
