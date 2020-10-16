@@ -58,6 +58,24 @@ obs_colnames = [f.lower() + "_rate" for f in basefilters]
 #   pathname of the observed catalog
 obsfile = "data/b15_4band_det_27_A.fits"
 
+#----------------------------------
+# Source Density Binning Parameters
+#----------------------------------
+# The following parameters determine how source density bins are determined
+# from the source density image, either by the number of bins (sd_Nbins) or
+# by the bin width (sd_binwidth). This can be used for generating AST inputs,
+# and is definitely used for splitting the observed and AST catlogs for
+# fitting speed. Parameters gathered here to make sure they are consistent
+# across the full workflow.
+
+# sd_binwidth : integer
+# Source density bin width.
+sd_binwidth = 1
+
+# sd_Nbins : integer
+# Number of source density bins.
+sd_Nbins = None
+
 # ------------------------------------------------------
 # Artificial Star Test Input File Generation Parameters
 # ------------------------------------------------------
