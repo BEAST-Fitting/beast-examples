@@ -175,6 +175,25 @@ def generate_files_for_tests(run_beast=True, run_tools=True):
         # star_type_probability
         # -----------------
 
+        # input settings
+        input = {
+            "output_filebase": None,
+            "ext_O_star_params": {"min_M_ini": 10, "min_Av": 0.5, "max_Av": 5},
+        }
+
+        # run it
+        output = star_type_probability.star_type_probability(
+            '{0}/{0}_pdf1d.fits'.format(settings_orig.project),
+            '{0}/{0}_pdf2d.fits'.format(settings_orig.project),
+            **input,
+        )
+
+        # save the inputs and outputs
+        asdf.AsdfFile({"input": input, "output": output}).write_to(
+            "{0}/{0}_star_type_probability.asdf".format(settings_orig.project)
+        )
+
+
 
 if __name__ == "__main__":
 
