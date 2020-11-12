@@ -27,7 +27,6 @@ obs_colnames = [f.upper() + "_RATE" for f in basefilters]
 # not needed?
 obsfile = "data/14675_LMC-13361nw-11112.gst_samp.fits"
 
-
 ## artificial star tests
 
 ast_models_selected_per_age = 70
@@ -43,7 +42,7 @@ ast_pixel_distribution = 10.0
 ast_reference_image = None
 ast_coord_boundary = None
 ast_supplement = None
-
+ast_erode_selection_region = 0.5
 
 ## observation(noise) model
 
