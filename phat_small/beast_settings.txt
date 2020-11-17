@@ -63,10 +63,14 @@ obsfile = "data/b15_4band_det_27_A.fits"
 #----------------------------------
 # The following parameters determine how source density bins are determined
 # from the source density image, either by the number of bins (sd_Nbins) or
-# by the bin width (sd_binwidth). This can be used for generating AST inputs,
-# and is definitely used for splitting the observed and AST catlogs for
-# fitting speed. Parameters gathered here to make sure they are consistent
-# across the full workflow.
+# by the bin width (sd_binwidth). If neither parameter is set, the bins
+# will be estimated using the minimum and maximum source density values
+# and bins of 1 source per square arcsecond. If both parameters are set,
+# currently the bin width parameter will be used to estimate the binning
+# (via beast/tools/density_map).
+# This can be used for generating AST inputs, and is definitely used for
+# splitting the observed and AST catlogs for fitting speed. Parameters gathered
+# here to make sure they are consistent across the full workflow.
 
 # sd_binwidth : integer
 # Source density bin width.
