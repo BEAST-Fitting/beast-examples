@@ -1,8 +1,11 @@
 import os
 import copy
+import stat
+import glob
 import numpy as np
 import argparse
 import asdf
+
 
 # BEAST imports
 from beast.tools.run import (
@@ -127,7 +130,7 @@ def generate_files_for_tests(run_beast=True, run_tools=True):
                 nsubs=settings.n_subgrid,
                 nprocs=1,
                 pdf2d_param_list=["Av", "M_ini", "logT"],
-                pdf_max_nbins=50,
+                pdf_max_nbins=200,
             )
 
             # -----------------
@@ -183,8 +186,8 @@ def generate_files_for_tests(run_beast=True, run_tools=True):
 
         # run it
         output = star_type_probability.star_type_probability(
-            '{0}/{0}_pdf1d.fits'.format(settings_orig.project),
-            '{0}/{0}_pdf2d.fits'.format(settings_orig.project),
+            "{0}/{0}_pdf1d.fits".format(settings_orig.project),
+            "{0}/{0}_pdf2d.fits".format(settings_orig.project),
             **input,
         )
 
@@ -193,6 +196,20 @@ def generate_files_for_tests(run_beast=True, run_tools=True):
             "{0}/{0}_star_type_probability.asdf".format(settings_orig.project)
         )
 
+    # ==========================================
+    # asdf file permissions
+    # ==========================================
+
+    # for unknown reasons, asdf currently writes files with permissions set
+    # to -rw-------.  This changes it to -rw-r--r-- (like the rest of the
+    # BEAST files) so Karl can easily copy them over to the cached file
+    # website.
+
+    # list of asdf files
+    asdf_files = glob.glob("*/*.asdf")
+    # go through each one to change permissions
+    for fname in asdf_files:
+        os.chmod(fname, stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP | stat.S_IROTH)
 
 
 if __name__ == "__main__":

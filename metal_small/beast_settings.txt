@@ -63,7 +63,7 @@ distance_unit = units.mag
 distance_prior_model = {'name': 'flat'}
 
 logt = [6.0, 10.13, 1.0]
-age_prior_model = {'name': 'flat'}
+age_prior_model = {'name': 'flat', "sfr": 1e-5}
 mass_prior_model = {"name": "kroupa"}
 # metallicities given as relative to solar which has 0.0152 (Z_solar)
 z = (10 ** np.array([-2.1, -1.5, -0.9, -0.3]) * 0.0152).tolist()
