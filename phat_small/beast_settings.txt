@@ -123,6 +123,15 @@ ast_reference_image = None
 # (either CW or CCW).
 ast_coord_boundary = None
 
+# ast_erode_selection_region : None, or float
+# You may wish to avoid placing ASTs near the edge of the image.  Set this to
+# the number of arcseconds (default=0.5, which is ~10 pixels for WFC3/UVIS) to
+# shrink the allowed AST placement region.  This is applied by doing an erosion
+# to both ast_coord_boundary (if set) and the convex hull around the photometry
+# catalog.
+ast_erode_selection_region = 0.5
+
+
 # -------------------------------------------
 # Noise Model Artificial Star Test Parameters
 # -------------------------------------------
