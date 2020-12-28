@@ -16,4 +16,4 @@ module load anaconda3
 source activate bdev
 
 # Launch a job
-python beast_production_wrapper.py
+python run_beast_xsede.py
