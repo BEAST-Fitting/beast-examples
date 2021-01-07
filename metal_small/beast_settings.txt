@@ -28,8 +28,10 @@ obs_colnames = [f.upper() + "_RATE" for f in basefilters]
 obsfile = "data/14675_LMC-13361nw-11112.gst_samp.fits"
 
 ## source density binning
+sd_binmode = 'linear'
 sd_binwidth = 1
 sd_Nbins = None
+sd_custom = None
 
 ## artificial star tests
 

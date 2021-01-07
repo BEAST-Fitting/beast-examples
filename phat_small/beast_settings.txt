@@ -62,23 +62,42 @@ obsfile = "data/b15_4band_det_27_A.fits"
 # Source Density Binning Parameters
 #----------------------------------
 # The following parameters determine how source density bins are determined
-# from the source density image, either by the number of bins (sd_Nbins) or
-# by the bin width (sd_binwidth). If neither parameter is set, the bins
+# from the source density image. The two mode options for binning are linear
+# and log. If the mode is "log", the number of bins parameter (sd_Nbins)
+# will determine the binning. If "linear", either the number of bins (sd_Nbins)
+# or the bin width (sd_binwidth) can be used to determine the binning.
+# If "linear" and neither sd_Nbins or sd_binwidth is set, the bins
 # will be estimated using the minimum and maximum source density values
-# and bins of 1 source per square arcsecond. If both parameters are set,
-# currently the bin width parameter will be used to estimate the binning
-# (via beast/tools/density_map).
-# This can be used for generating AST inputs, and is definitely used for
-# splitting the observed and AST catlogs for fitting speed. Parameters gathered
-# here to make sure they are consistent across the full workflow.
+# and bins of 1 source per square arcsecond. If both  sd_Nbins or sd_binwidth
+# are set, currently the bin width parameter will be used to estimate the
+# binning (via beast/tools/density_map).
+# Alternatively, the user can input custom bin edges, which overrides all
+# of the above parameters.
+# This can be used for generating AST input positions, and is used for
+# splitting the observed and AST catlogs for fitting speed. Parameters are
+# gathered here to make sure they are consistent across the full workflow.
 
-# sd_binwidth : integer
-# Source density bin width.
-sd_binwidth = 1
+# sd_binmode : string
+# Convention for source density binning, either "linear" or "log"
+# Set to 'None' if not used.
+sd_binmode= "log"
 
 # sd_Nbins : integer
-# Number of source density bins.
-sd_Nbins = None
+# (optional) Number of source density bins.
+# Set to 'None' if not used.
+sd_Nbins = 10
+
+# sd_binwidth : integer
+# (optional) Source density bin width. Used if the bin mode is linear.
+# Set to 'None' if not used.
+sd_binwidth = None
+
+# sd_custom : list (default = None)
+# (optional) List of custom bin edges to use for source density binning. Will
+# override all other source density binning parameters if set.
+# Overrides sd_binmode, sd_Nbins, and sd_binwidth.
+# Set to 'None' if not used.
+sd_custom = None
 
 # ------------------------------------------------------
 # Artificial Star Test Input File Generation Parameters
