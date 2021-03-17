@@ -2,7 +2,6 @@ import os
 import copy
 import stat
 import glob
-import numpy as np
 import argparse
 import asdf
 
@@ -79,7 +78,6 @@ def generate_files_for_tests(run_beast=True, run_tools=True):
                 use_sd=False,
                 nsubs=settings.n_subgrid,
                 nprocs=1,
-                use_rate=True,
             )
 
             # -----------------
