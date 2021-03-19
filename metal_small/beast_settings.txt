@@ -11,7 +11,7 @@ from beast.physicsmodel.dust import extinction
 from beast.observationmodel.noisemodel import absflux_covmat
 
 # -----------------------------------------------------------------
-# User inputs                                   
+# User inputs
 # -----------------------------------------------------------------
 # Parameters that are required to make models and to fit the data
 # -----------------------------------------------------------------
@@ -272,6 +272,7 @@ age_prior_model = {'name': 'flat', "sfr": 1e-5}
 mass_prior_model = {"name": "kroupa"}
 
 # Metallicity : list of floats
+#   Given as relative to solar which has 0.0152 (Z_solar)
 #   Here: Z == Z_initial, NOT Z(t) surface abundance
 #   PARSECv1.2S accepts values 1.e-4 < Z < 0.06
 #   example z = [0.03, 0.019, 0.008, 0.004]
