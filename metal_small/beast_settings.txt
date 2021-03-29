@@ -48,47 +48,6 @@ obs_colnames = [f.upper() + "_RATE" for f in basefilters]
 #   pathname of the observed catalog
 obsfile = "data/14675_LMC-13361nw-11112.gst_samp.fits"
 
-#----------------------------------
-# Source Density Binning Parameters
-#----------------------------------
-#   The following parameters determine how source density bins are determined
-#   from the source density image. The two mode options for binning are "linear"
-#   and "log". If the mode is "log", the number of bins parameter (sd_Nbins)
-#   will determine the binning. If "linear", either the number of bins (sd_Nbins)
-#   or the bin width (sd_binwidth) can be used to determine the binning.
-#   If "linear" and neither sd_Nbins or sd_binwidth is set, the bins
-#   will be estimated using the minimum and maximum source density values
-#   and bins of 1 source per square arcsecond. If both sd_Nbins and sd_binwidth
-#   are set, the bin width parameter will be used to estimate the binning
-#   (via beast/tools/density_map).
-#   Alternatively, the user can input custom bin edges (sd_custom), which
-#   overrides all of the above parameters.
-#   These parameters are used for generating AST input positions, and for
-#   splitting the observed and AST catalogs for fitting speed. Parameters are
-#   gathered here to make sure they are consistent across the full workflow.
-
-# sd_binmode : string
-#   Convention for source density binning, either "linear" or "log"
-#   Must be set to 'None' if not used.
-sd_binmode= "linear"
-
-# sd_Nbins : integer
-#   Number of source density bins.
-#   Must be set to 'None' if not used.
-sd_Nbins = None
-
-# sd_binwidth : integer
-#   Source density bin width. Used only if the bin mode is linear.
-#   Must be set to 'None' if not used.
-sd_binwidth = 1
-
-# sd_custom : list
-#   List of custom bin edges to use for source density binning. Will
-#   override all other source density binning parameters if set.
-#   Overrides sd_binmode, sd_Nbins, and sd_binwidth.
-#   Must be set to 'None' if not used.
-sd_custom = None
-
 # -------------------------------------------
 # Physics Grid Parameters
 # -------------------------------------------
@@ -172,6 +131,47 @@ fA_prior_model = {"name": "flat"}
 # add in the standard filters to enable output of stats and pdf1d values
 # for the observed fitlers (AC)
 add_spectral_properties_kwargs = dict(filternames=filters)
+
+#----------------------------------
+# Source Density Binning Parameters
+#----------------------------------
+#   The following parameters determine how source density bins are determined
+#   from the source density image. The two mode options for binning are "linear"
+#   and "log". If the mode is "log", the number of bins parameter (sd_Nbins)
+#   will determine the binning. If "linear", either the number of bins (sd_Nbins)
+#   or the bin width (sd_binwidth) can be used to determine the binning.
+#   If "linear" and neither sd_Nbins or sd_binwidth is set, the bins
+#   will be estimated using the minimum and maximum source density values
+#   and bins of 1 source per square arcsecond. If both sd_Nbins and sd_binwidth
+#   are set, the bin width parameter will be used to estimate the binning
+#   (via beast/tools/density_map).
+#   Alternatively, the user can input custom bin edges (sd_custom), which
+#   overrides all of the above parameters.
+#   These parameters are used for generating AST input positions, and for
+#   splitting the observed and AST catalogs for fitting speed. Parameters are
+#   gathered here to make sure they are consistent across the full workflow.
+
+# sd_binmode : string
+#   Convention for source density binning, either "linear" or "log"
+#   Must be set to 'None' if not used.
+sd_binmode= "linear"
+
+# sd_Nbins : integer
+#   Number of source density bins.
+#   Must be set to 'None' if not used.
+sd_Nbins = None
+
+# sd_binwidth : integer
+#   Source density bin width. Used only if the bin mode is linear.
+#   Must be set to 'None' if not used.
+sd_binwidth = 1
+
+# sd_custom : list
+#   List of custom bin edges to use for source density binning. Will
+#   override all other source density binning parameters if set.
+#   Overrides sd_binmode, sd_Nbins, and sd_binwidth.
+#   Must be set to 'None' if not used.
+sd_custom = None
 
 # ------------------------------------------------------
 # Artificial Star Test Input File Generation Parameters
