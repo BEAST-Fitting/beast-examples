@@ -5,7 +5,6 @@ import numpy as np
 from astropy import units
 
 # BEAST imports
-from beast.physicsmodel.stars import isochrone
 from beast.physicsmodel.stars import evoltracks
 from beast.physicsmodel.stars import stellib
 from beast.physicsmodel.dust import extinction
