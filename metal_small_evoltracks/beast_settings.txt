@@ -106,7 +106,7 @@ osl = stellib.Tlusty() + stellib.Kurucz()
 # Dust extinction grid definition
 # recommended extinction mixture model
 extA = extinction.Generalized_DustExt(curve='G23')
-extB = extinction.Generalized_DustExt(curve='G25_SMCAvg')
+extB = extinction.Generalized_DustExt(curve='G24_SMCAvg')
 extLaw = extinction.Generalized_RvFALaw(ALaw=extA, BLaw=extB)
 
 # A(V): dust column in magnitudes
@@ -117,7 +117,7 @@ av_prior_model = {"name": "flat"}
 
 # R(V): dust average grain size
 #   example [min, max, step] = [2.0,6.0,1.0]
-rvs = [2.0, 6.0, 1.0]
+rvs = [2.3, 5.6, 1.0]
 rv_prior_model = {"name": "flat"}
 
 # fA: mixture factor between "MW" and "SMCBar" extinction curves
