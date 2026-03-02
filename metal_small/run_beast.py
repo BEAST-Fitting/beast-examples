@@ -5,6 +5,8 @@ Script to run the BEAST on the PHAT-like data.
 
 # system imports
 import argparse
+import shutil
+from glob import glob
 
 # BEAST imports
 from beast.tools.run import (
@@ -54,6 +56,12 @@ if __name__ == "__main__":
 
     # read in BEAST settings
     settings = beast_settings.beast_settings("beast_settings.txt")
+
+    # remove output files from previous runs
+    output_dir_path = 'beast_'+os.getcwd().split('/')[-1]
+    if os.path.isdir(output_dir_path):
+        shutil.rmtree(output_dir_path)
+
 
     if args.physicsmodel:
 
