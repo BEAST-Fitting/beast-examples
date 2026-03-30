@@ -71,6 +71,14 @@ ast_models_selected_per_age = 70
 # for an AST to be included in the list (Default = 3)
 ast_bands_above_maglimit = 3
 
+# ast_n_flux_bins : integer
+# The number of flux bins into which the dynamic range of the
+# model grid in each filter is divided
+ast_n_flux_bins = 40
+
+# ast_n_per_flux_bin : integer
+# Minimum number of model seds that need to fall into each bin
+ast_n_per_flux_bin = 50
 
 # ast_realization_per_model : integer
 # Number of Realizations of each included AST model
